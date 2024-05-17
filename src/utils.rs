@@ -4,7 +4,7 @@ use crate::handlers::process::error::ProcessError;
 
 pub fn get_secret_data() -> Result<(i32, String), ProcessError> {
     Ok((
-        env::var("API_HASH")
+        env::var("API_ID")
             .map_err(|_| ProcessError::InvalidAPI)?
             .parse::<i32>()
             .map_err(|_| ProcessError::InvalidAPI)?,
