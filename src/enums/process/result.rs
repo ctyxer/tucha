@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Arc};
 use grammers_client::types::LoginToken;
 
 use crate::{
-    handlers::{client::Client, file::File},
+    types::{client::Client, file::File},
     ui::{tab::Tab, window::Window},
 };
 
@@ -15,6 +15,7 @@ pub enum ProcessResult {
     LoggedInWithCode(Client, String),
     FilesUploaded,
     UploadedFilesReceived(String, Vec<File>),
+    FilesDownloaded,
 }
 
 impl ProcessResult {
@@ -47,9 +48,7 @@ impl ProcessResult {
                         window.current_client = client_name.clone();
                     }
 
-                    window
-                        .clients
-                        .insert(client_name, client);
+                    window.clients.insert(client_name, client);
                 }
                 ProcessResult::FilesUploaded => {
                     window.current_process = CurrentProcess::Idle;
@@ -60,6 +59,9 @@ impl ProcessResult {
                     window.current_process = CurrentProcess::Idle;
 
                     window.cloud_tab.clients_files.insert(client_name, files);
+                }
+                ProcessResult::FilesDownloaded => {
+                    window.current_process = CurrentProcess::Idle;
                 }
             }
         }

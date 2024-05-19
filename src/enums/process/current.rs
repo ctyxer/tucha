@@ -7,6 +7,7 @@ pub enum CurrentProcess{
     SendingLoginCode,
     LogInWithCode,
     UploadingFiles,
+    DownloadingFiles,
 }
 
 impl Display for CurrentProcess{
@@ -18,6 +19,7 @@ impl Display for CurrentProcess{
             CurrentProcess::LogInWithCode => write!(f, "Log in..."),
             CurrentProcess::UploadingFiles => write!(f, "Uploading files..."),
             CurrentProcess::GettingUploadedFiles => write!(f, "Getting uploaded files..."),
+            CurrentProcess::DownloadingFiles => write!(f, "Downloading files..."),
         }
     }
 }

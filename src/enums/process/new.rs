@@ -1,14 +1,17 @@
-use crate::handlers::client::Client;
+use std::path::PathBuf;
+
+use crate::types::client::Client;
 use crate::ui::window::Window;
 
-use crate::handlers::process::current::CurrentProcess;
+use crate::enums::process::current::CurrentProcess;
 
 pub enum NewProcess {
     ConnectToAllSavedClients,
     GetUploadedFiles,
     SendLoginCode,
     SingInToken,
-    UploadFiles,
+    UploadFiles(Vec<PathBuf>),
+    DownloadFiles(Vec<i32>),
 }
 
 impl NewProcess {
@@ -35,23 +38,16 @@ impl NewProcess {
                 let incomplete_client = window.new_session_tab.incomplete_client.clone().unwrap();
                 let reveived_code = window.new_session_tab.reveived_code.clone();
                 let login_token = window.new_session_tab.login_token.clone().unwrap();
-                let save_session_file = window.new_session_tab.save_session_file.clone();
 
-                tokio::spawn(incomplete_client.sign_in_code(
-                    sender,
-                    reveived_code,
-                    login_token,
-                    save_session_file,
-                ));
+                tokio::spawn(incomplete_client.sign_in_code(sender, reveived_code, login_token));
             }
-            NewProcess::UploadFiles => {
+            NewProcess::UploadFiles(transferred_files) => {
                 window.current_process = CurrentProcess::UploadingFiles;
 
                 let sender = window.sender.clone();
-                let file_paths = window.cloud_tab.uploaded_file_paths.clone();
                 let client = window.clients.get(&window.current_client).unwrap().clone();
 
-                tokio::spawn(client.upload_files(sender, file_paths));
+                tokio::spawn(client.upload_files(sender, transferred_files.clone()));
             }
             NewProcess::GetUploadedFiles => {
                 window.current_process = CurrentProcess::GettingUploadedFiles;
@@ -61,6 +57,14 @@ impl NewProcess {
 
                 tokio::spawn(client.get_uploaded_files(sender));
             }
+            NewProcess::DownloadFiles(message_ids) => {
+                window.current_process = CurrentProcess::DownloadingFiles;
+
+                let sender = window.sender.clone();
+                let client = window.clients.get(&window.current_client).unwrap().clone();
+
+                tokio::spawn(client.download_files(sender, message_ids.clone()));
+            },
         };
     }
 }

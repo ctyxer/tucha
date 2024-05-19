@@ -1,6 +1,6 @@
 use std::env;
 
-use crate::handlers::process::error::ProcessError;
+use crate::enums::process::error::ProcessError;
 
 pub fn get_secret_data() -> Result<(i32, String), ProcessError> {
     Ok((

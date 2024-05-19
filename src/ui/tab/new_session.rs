@@ -4,8 +4,7 @@ use eframe::egui::{Button, Grid, Layout, TextEdit, Ui};
 use grammers_client::types::LoginToken;
 
 use crate::{
-    handlers::{client::Client, process::new::NewProcess},
-    ui::window::Window,
+    enums::process::new::NewProcess, types::client::Client, ui::window::Window
 };
 
 pub struct NewSession {
@@ -15,7 +14,6 @@ pub struct NewSession {
     pub is_code_received: bool,
     pub login_token: Option<Arc<LoginToken>>,
     pub incomplete_client: Option<Client>,
-    pub save_session_file: bool,
 }
 
 impl NewSession {
@@ -27,7 +25,6 @@ impl NewSession {
             is_code_received: false,
             login_token: None,
             incomplete_client: None,
-            save_session_file: true,
         }
     }
 
@@ -55,12 +52,6 @@ impl NewSession {
                     received_code_singleline,
                 );
             });
-            ui.end_row();
-
-            ui.checkbox(
-                &mut window.new_session_tab.save_session_file,
-                "Save session file",
-            );
             ui.end_row();
 
             let sign_in_button = Button::new("Sign in");

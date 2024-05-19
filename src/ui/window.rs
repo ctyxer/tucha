@@ -3,12 +3,9 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-use eframe::egui::{self, ComboBox, Spinner};
+use eframe::egui::{self, ComboBox, Layout, Spinner};
 
-use crate::handlers::{
-    client::Client,
-    process::{current::CurrentProcess, new::NewProcess, result::ProcessResult},
-};
+use crate::{enums::process::{current::CurrentProcess, new::NewProcess, result::ProcessResult}, types::client::Client};
 
 use super::tab::{cloud::Cloud, new_session::NewSession, Tab};
 
@@ -31,19 +28,21 @@ impl eframe::App for Window {
                 ui.selectable_value(&mut self.tab, Tab::Cloud, "Cloud");
                 ui.selectable_value(&mut self.tab, Tab::NewSession, "New session");
 
-                if self.clients.len() > 0 {
-                    ComboBox::from_id_source("current-client")
-                        .selected_text(format!("{}", self.current_client))
-                        .show_ui(ui, |ui| {
-                            for client in &self.clients {
-                                ui.selectable_value(
-                                    &mut self.current_client,
-                                    client.0.to_string(),
-                                    client.0,
-                                );
-                            }
-                        });
-                }
+                ui.with_layout(Layout::right_to_left(egui::Align::Min), |ui| {
+                    if self.clients.len() > 0 {
+                        ComboBox::from_id_source("current-client")
+                            .selected_text(format!("{}", self.current_client))
+                            .show_ui(ui, |ui| {
+                                for client in &self.clients {
+                                    ui.selectable_value(
+                                        &mut self.current_client,
+                                        client.0.to_string(),
+                                        client.0,
+                                    );
+                                }
+                            });
+                    }
+                });
             });
         });
 
