@@ -1,19 +1,17 @@
 use std::sync::Arc;
 
 use eframe::egui::{Button, Grid, Layout, TextEdit, Ui};
-use grammers_client::types::{LoginToken, PasswordToken};
+use grammers_client::types::LoginToken;
 
-use crate::{
-    enums::process::new::NewProcess, types::client::Client, ui::window::Window
-};
+use crate::{enums::process::new::NewProcess, types::client::Client, ui::window::Window};
 
 pub struct NewSession {
     pub new_session_name: String,
     pub phone_number: String,
     pub reveived_code: String,
+    pub user_password: String,
     pub is_code_received: bool,
     pub login_token: Option<Arc<LoginToken>>,
-    pub password_token: Option<PasswordToken>,
     pub incomplete_client: Option<Client>,
 }
 
@@ -23,9 +21,9 @@ impl NewSession {
             new_session_name: String::new(),
             phone_number: String::new(),
             reveived_code: String::new(),
+            user_password: String::new(),
             is_code_received: false,
             login_token: None,
-            password_token: None,
             incomplete_client: None,
         }
     }
@@ -33,8 +31,16 @@ impl NewSession {
     pub fn ui(window: &mut Window, ui: &mut Ui) {
         Grid::new("New session").num_columns(2).show(ui, |ui| {
             ui.label("Phone number: ");
-            ui.add(
+            ui.add_enabled(
+                !window.new_session_tab.is_code_received,
                 TextEdit::singleline(&mut window.new_session_tab.phone_number)
+                    .min_size(ui.available_size()),
+            );
+            ui.end_row();
+
+            ui.label("Password (if required): ");
+            ui.add(
+                TextEdit::singleline(&mut window.new_session_tab.user_password)
                     .min_size(ui.available_size()),
             );
             ui.end_row();
@@ -65,7 +71,7 @@ impl NewSession {
                 )
                 .clicked()
             {
-                NewProcess::start(window, NewProcess::SingInToken);
+                NewProcess::start(window, NewProcess::SingIn);
             };
             ui.end_row();
         });

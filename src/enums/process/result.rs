@@ -13,7 +13,7 @@ pub enum ProcessResult {
     Error(ProcessError),
     ConnectedToSavedClients(BTreeMap<String, Client>),
     LoginCodeSended(LoginToken, Client),
-    LoggedInWithCode(Client, String),
+    LoggedIn(Client, String),
     FilesUploaded,
     UploadedFilesReceived(String, Vec<File>),
     FilesDownloaded,
@@ -40,13 +40,11 @@ impl ProcessResult {
                     window.new_session_tab.is_code_received = true;
                     window.new_session_tab.incomplete_client = Some(client);
                 }
-                ProcessResult::LoggedInWithCode(client, client_name) => {
+                ProcessResult::LoggedIn(client, client_name) => {
                     window.current_process = CurrentProcess::Idle;
                     window.tab = Tab::Cloud;
 
-                    if window.current_client.is_empty() {
-                        window.current_client = client_name.clone();
-                    }
+                    window.current_client = client_name.clone();
 
                     window.clients.insert(client_name, client);
                 }
@@ -64,9 +62,6 @@ impl ProcessResult {
                     window.current_process = CurrentProcess::Idle;
                 }
                 ProcessResult::Error(error) => {
-                    if let ProcessError::PasswordRequired(password_token) = &error {
-                        window.new_session_tab.password_token = Some(password_token.clone());
-                    };
                     window.current_process = CurrentProcess::Error(error);
                 }
             }

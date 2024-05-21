@@ -111,10 +111,11 @@ impl Client {
         ))
     }
 
-    pub async fn sign_in_code(
+    pub async fn sign_in(
         self: Self,
         received_code: String,
         login_token: Arc<LoginToken>,
+        user_password: String,
     ) -> Result<ProcessResult, ProcessError> {
         let tg_client = self.tg_client;
 
@@ -123,9 +124,36 @@ impl Client {
             Err(err) => match err {
                 grammers_client::SignInError::SignUpRequired {
                     terms_of_service: _,
-                } => Err(ProcessError::OtherSignInError),
-                grammers_client::SignInError::PasswordRequired(v) => {
-                    Err(ProcessError::PasswordRequired(v))
+                } => Err(ProcessError::SignUpRequired),
+                grammers_client::SignInError::PasswordRequired(password_token) => {
+                    if !user_password.is_empty() {
+                        match tg_client
+                            .check_password(password_token, user_password)
+                            .await
+                        {
+                            Ok(v) => Ok(v),
+                            Err(e) => match e {
+                                grammers_client::SignInError::SignUpRequired {
+                                    terms_of_service: _,
+                                } => Err(ProcessError::SignUpRequired),
+                                grammers_client::SignInError::PasswordRequired(_) => {
+                                    Err(ProcessError::OtherSignInError)
+                                }
+                                grammers_client::SignInError::InvalidCode => {
+                                    Err(ProcessError::InvalidCode)
+                                }
+                                grammers_client::SignInError::InvalidPassword => {
+                                    Err(ProcessError::InvalidPassword)
+                                }
+                                grammers_client::SignInError::Other(_) => {
+                                    Err(ProcessError::OtherSignInError)
+                                }
+                            },
+                        }
+                    }
+                    else {
+                        Err(ProcessError::PasswordRequired)
+                    }
                 }
                 grammers_client::SignInError::InvalidCode => Err(ProcessError::InvalidCode),
                 grammers_client::SignInError::InvalidPassword => Err(ProcessError::InvalidPassword),
@@ -162,7 +190,7 @@ impl Client {
 
         let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user).await?;
 
-        Ok(ProcessResult::LoggedInWithCode(
+        Ok(ProcessResult::LoggedIn(
             Client::new(tg_client, Some(chat)),
             match user.username() {
                 Some(v) => v,

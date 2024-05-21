@@ -52,6 +52,7 @@ impl eframe::App for Window {
                             });
                         if ui.button("Restart clients").clicked() {
                             self.clients.clear();
+                            self.cloud_tab.clients_files.clear();
                             NewProcess::start(self, NewProcess::ConnectToAllSavedClients);
                         }
                     }

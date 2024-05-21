@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use grammers_client::types::PasswordToken;
-
 #[derive(Debug, Clone)]
 pub enum ProcessError {
     AccessHashIsNone,
@@ -18,6 +16,7 @@ pub enum ProcessError {
     CloudGroupIsNotCreated,
     CurrentClientIsNone,
     SessionFileIsNotExist,
+    SignUpRequired,
     HomeDirectoryIsNone,
     IncompleteClientIsNone,
     InvalidAPI,
@@ -29,7 +28,7 @@ pub enum ProcessError {
     MessageNotContainsMedia,
     MessagesNotFound,
     OtherSignInError,
-    PasswordRequired(PasswordToken),
+    PasswordRequired,
     CannotSaveSessionInFile,
     UsernameIsNone,
 }
@@ -57,6 +56,7 @@ impl Display for ProcessError {
             ProcessError::CloudGroupIsNotCreated => write!(f, "Cloud gropup is not created."),
             ProcessError::CurrentClientIsNone => write!(f, "Current client is None."),
             ProcessError::SessionFileIsNotExist => write!(f, "Session file is not exist."),
+            ProcessError::SignUpRequired => write!(f, "Sign up required."),
             ProcessError::HomeDirectoryIsNone => write!(f, "Home directory is None."),
             ProcessError::IncompleteClientIsNone => {
                 write!(f, "Incomplete telegram client is None.")
@@ -70,7 +70,7 @@ impl Display for ProcessError {
             ProcessError::MessageNotContainsMedia => write!(f, "Message not contains media."),
             ProcessError::MessagesNotFound => write!(f, "Message not found."),
             ProcessError::OtherSignInError => write!(f, "Other sign in error."),
-            ProcessError::PasswordRequired(_) => write!(f, "Password required."),
+            ProcessError::PasswordRequired => write!(f, "Password required."),
             ProcessError::CannotSaveSessionInFile => write!(f, "Cannot save session in file."),
             ProcessError::UsernameIsNone => write!(f, "Username is None."),
         }

@@ -13,7 +13,7 @@ pub enum NewProcess {
     ConnectToAllSavedClients,
     GetUploadedFiles,
     SendLoginCode,
-    SingInToken,
+    SingIn,
     UploadFiles(Vec<PathBuf>),
     DownloadFiles(Vec<i32>),
 }
@@ -53,7 +53,7 @@ impl NewProcess {
                     Self::send_result(sender, Client::send_login_code(phone_number).await);
                 });
             }
-            NewProcess::SingInToken => {
+            NewProcess::SingIn => {
                 window.current_process = CurrentProcess::LogInWithCode;
 
                 let sender = window.sender.clone();
@@ -74,11 +74,13 @@ impl NewProcess {
                         return;
                     }
                 };
+                let user_password = window.new_session_tab.user_password.clone();
+
                 tokio::spawn(async move {
                     Self::send_result(
                         sender,
                         incomplete_client
-                            .sign_in_code(reveived_code, login_token)
+                            .sign_in(reveived_code, login_token, user_password)
                             .await,
                     );
                 });
@@ -88,14 +90,15 @@ impl NewProcess {
 
                 let sender = window.sender.clone();
                 let transferred_files = transferred_files.clone();
-                let client = match window.clients.get(&window.current_client){
+                let client = match window.clients.get(&window.current_client) {
                     Some(v) => v,
                     None => {
                         let _sender_result =
                             sender.send(ProcessResult::Error(ProcessError::CurrentClientIsNone));
                         return;
-                    },
-                }.clone();
+                    }
+                }
+                .clone();
 
                 tokio::spawn(async move {
                     Self::send_result(sender, client.upload_files(transferred_files.clone()).await);
@@ -105,14 +108,15 @@ impl NewProcess {
                 window.current_process = CurrentProcess::GettingUploadedFiles;
 
                 let sender = window.sender.clone();
-                let client = match window.clients.get(&window.current_client){
+                let client = match window.clients.get(&window.current_client) {
                     Some(v) => v,
                     None => {
                         let _sender_result =
                             sender.send(ProcessResult::Error(ProcessError::CurrentClientIsNone));
                         return;
-                    },
-                }.clone();
+                    }
+                }
+                .clone();
 
                 tokio::spawn(async move {
                     Self::send_result(sender, client.get_uploaded_files().await);
@@ -122,14 +126,15 @@ impl NewProcess {
                 window.current_process = CurrentProcess::DownloadingFiles;
 
                 let sender = window.sender.clone();
-                let client = match window.clients.get(&window.current_client){
+                let client = match window.clients.get(&window.current_client) {
                     Some(v) => v,
                     None => {
                         let _sender_result =
                             sender.send(ProcessResult::Error(ProcessError::CurrentClientIsNone));
                         return;
-                    },
-                }.clone();
+                    }
+                }
+                .clone();
                 let message_ids = message_ids.clone();
 
                 tokio::spawn(async move {
