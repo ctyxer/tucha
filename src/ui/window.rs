@@ -3,9 +3,12 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-use eframe::egui::{self, ComboBox, Layout, Spinner};
+use eframe::egui::{self, Color32, ComboBox, Layout, RichText, Spinner};
 
-use crate::{enums::process::{current::CurrentProcess, new::NewProcess, result::ProcessResult}, types::client::Client};
+use crate::{
+    enums::process::{current::CurrentProcess, new::NewProcess, result::ProcessResult},
+    types::client::Client,
+};
 
 use super::tab::{cloud::Cloud, new_session::NewSession, Tab};
 
@@ -33,14 +36,24 @@ impl eframe::App for Window {
                         ComboBox::from_id_source("current-client")
                             .selected_text(format!("{}", self.current_client))
                             .show_ui(ui, |ui| {
+                                let mut changed = false;
                                 for client in &self.clients {
-                                    ui.selectable_value(
-                                        &mut self.current_client,
-                                        client.0.to_string(),
-                                        client.0,
-                                    );
+                                    changed = ui
+                                        .selectable_value(
+                                            &mut self.current_client,
+                                            client.0.to_string(),
+                                            client.0,
+                                        )
+                                        .changed();
+                                }
+                                if changed {
+                                    NewProcess::start(self, NewProcess::GetUploadedFiles);
                                 }
                             });
+                        if ui.button("Restart clients").clicked() {
+                            self.clients.clear();
+                            NewProcess::start(self, NewProcess::ConnectToAllSavedClients);
+                        }
                     }
                 });
             });
@@ -54,8 +67,21 @@ impl eframe::App for Window {
         if !matches!(self.current_process, CurrentProcess::Idle) {
             egui::TopBottomPanel::bottom("process").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.add(Spinner::new());
-                    ui.label(self.current_process.to_string());
+                    if let CurrentProcess::Error(error) = &self.current_process {
+                        ui.label(
+                            RichText::new(&error.to_string())
+                                .color(Color32::RED)
+                                .strong(),
+                        );
+                        ui.with_layout(Layout::right_to_left(egui::Align::Max), |ui| {
+                            if ui.button("Close").clicked() {
+                                self.current_process = CurrentProcess::Idle;
+                            }
+                        });
+                    } else {
+                        ui.add(Spinner::new());
+                        ui.label(self.current_process.to_string());
+                    }
                 });
             });
         }

@@ -7,9 +7,10 @@ use crate::{
     ui::{tab::Tab, window::Window},
 };
 
-use super::{current::CurrentProcess, new::NewProcess};
+use super::{current::CurrentProcess, error::ProcessError, new::NewProcess};
 
 pub enum ProcessResult {
+    Error(ProcessError),
     ConnectedToSavedClients(BTreeMap<String, Client>),
     LoginCodeSended(LoginToken, Client),
     LoggedInWithCode(Client, String),
@@ -26,10 +27,9 @@ impl ProcessResult {
                 ProcessResult::ConnectedToSavedClients(clients) => {
                     window.current_process = CurrentProcess::Idle;
 
-                    if clients.len() > 0 {
+                    if let Some(first_client) = &clients.clone().first_key_value() {
                         window.clients = clients;
-                        window.current_client =
-                            window.clients.first_key_value().unwrap().0.to_string();
+                        window.current_client = first_client.0.to_string();
 
                         NewProcess::start(window, NewProcess::GetUploadedFiles);
                     }
@@ -62,6 +62,12 @@ impl ProcessResult {
                 }
                 ProcessResult::FilesDownloaded => {
                     window.current_process = CurrentProcess::Idle;
+                }
+                ProcessResult::Error(error) => {
+                    if let ProcessError::PasswordRequired(password_token) = &error {
+                        window.new_session_tab.password_token = Some(password_token.clone());
+                    };
+                    window.current_process = CurrentProcess::Error(error);
                 }
             }
         }

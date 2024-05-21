@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use eframe::egui::{Button, Grid, Layout, TextEdit, Ui};
-use grammers_client::types::LoginToken;
+use grammers_client::types::{LoginToken, PasswordToken};
 
 use crate::{
     enums::process::new::NewProcess, types::client::Client, ui::window::Window
@@ -13,6 +13,7 @@ pub struct NewSession {
     pub reveived_code: String,
     pub is_code_received: bool,
     pub login_token: Option<Arc<LoginToken>>,
+    pub password_token: Option<PasswordToken>,
     pub incomplete_client: Option<Client>,
 }
 
@@ -24,6 +25,7 @@ impl NewSession {
             reveived_code: String::new(),
             is_code_received: false,
             login_token: None,
+            password_token: None,
             incomplete_client: None,
         }
     }

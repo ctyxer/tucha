@@ -15,9 +15,14 @@ async fn main() -> Result<(), eframe::Error> {
     if let Some(mut tucha_location) = data_local_dir() {
         tucha_location.push("tucha/sessions");
 
-        fs::create_dir_all(&tucha_location).unwrap();
+        if fs::create_dir_all(&tucha_location).is_err() {
+            panic!("Failed to create a local folder on the path: {}", &tucha_location.display().to_string());
+        }
         tucha_location.pop();
-        set_current_dir(&tucha_location).unwrap();
+        if set_current_dir(&tucha_location).is_err() {
+            panic!("Failed to set current directory in path: {}", &tucha_location.display().to_string());
+        }
+        
 
         dotenv::dotenv().ok();
 

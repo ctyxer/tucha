@@ -19,9 +19,9 @@ impl Cloud {
     pub fn ui(window: &mut Window, ui: &mut Ui) {
         ui.horizontal(|ui| {
             if ui.button("Upload file").clicked() {
-                let transferred_files = rfd::FileDialog::new().pick_files().unwrap();
-
-                NewProcess::start(window, NewProcess::UploadFiles(transferred_files));
+                if let Some(transferred_files) = rfd::FileDialog::new().pick_files() {
+                    NewProcess::start(window, NewProcess::UploadFiles(transferred_files));
+                }
             }
 
             if ui.button("Refresh").clicked() {

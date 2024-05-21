@@ -1,12 +1,7 @@
-use std::{
-    collections::BTreeMap,
-    fs,
-    path::PathBuf,
-    sync::{mpsc::Sender, Arc},
-};
+use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc};
 
 use grammers_client::{
-    types::{Chat, Dialog, IterBuffer, LoginToken, Media, User},
+    types::{Chat, Dialog, IterBuffer, LoginToken, Media, Message, User},
     Client as TGClient, Config, InputMessage,
 };
 use grammers_session::Session;
@@ -18,11 +13,14 @@ use tl::{
     types::InputUser,
 };
 
-use crate::{enums::process::result::ProcessResult, utils::get_secret_data};
+use crate::{
+    enums::process::{error::ProcessError, result::ProcessResult},
+    utils::get_secret_data,
+};
 
 use super::{file::metadata::FileMetadata, file::File};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Client {
     pub tg_client: TGClient,
     pub tg_chat: Option<Chat>,
@@ -36,52 +34,63 @@ impl Client {
     async fn find_chat_with_files(
         mut iter_dialogs: IterBuffer<GetDialogs, Dialog>,
         user: &User,
-    ) -> Option<Chat> {
-        while let Some(dialog) = iter_dialogs.next().await.unwrap() {
+    ) -> Result<Chat, ProcessError> {
+        while let Some(dialog) = iter_dialogs
+            .next()
+            .await
+            .map_err(|_| ProcessError::CannotGetDialogs)?
+        {
             if dialog
                 .chat()
                 .name()
                 .contains(&format!("TuchaCloud-{}", user.id()))
             {
-                return Some(dialog.chat().clone());
+                return Ok(dialog.chat().clone());
             }
         }
-        None
+        Err(ProcessError::ChatIsNotFound)
     }
 
-    pub async fn connect_to_saved_sessions(sender: Sender<ProcessResult>) {
-        let session_files = fs::read_dir("./sessions").unwrap();
+    pub async fn connect_to_saved_sessions() -> Result<ProcessResult, ProcessError> {
+        let mut session_files =
+            fs::read_dir("./sessions").map_err(|_| ProcessError::CannotReadSessionsDirectory)?;
         let mut clients: BTreeMap<String, Self> = BTreeMap::new();
 
-        for session_file in session_files {
-            let path = session_file.unwrap().path();
-            let secret_data = get_secret_data().unwrap();
+        while let Some(Ok(session_file)) = session_files.next() {
+            let path = session_file.path();
+            let secret_data = get_secret_data()?;
 
             let tg_client = TGClient::connect(Config {
-                session: Session::load_file(path).unwrap(),
+                session: Session::load_file(path)
+                    .map_err(|_| ProcessError::CannotLoadSessionFile)?,
                 api_id: secret_data.0,
                 api_hash: secret_data.1,
                 params: Default::default(),
             })
             .await
-            .unwrap();
+            .map_err(|_| ProcessError::ClientIsNotConnected)?;
 
-            let user = tg_client.get_me().await.unwrap();
-
-            let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user)
+            let user = tg_client
+                .get_me()
                 .await
-                .unwrap();
+                .map_err(|_| ProcessError::CannotGetUserData)?;
+
+            let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user).await?;
 
             clients.insert(
-                user.username().unwrap().to_string(),
+                match user.username() {
+                    Some(v) => v,
+                    None => return Err(ProcessError::UsernameIsNone),
+                }
+                .to_string(),
                 Self::new(tg_client, Some(chat)),
             );
         }
-        let _ = sender.send(ProcessResult::ConnectedToSavedClients(clients));
+        Ok(ProcessResult::ConnectedToSavedClients(clients))
     }
 
-    pub async fn send_login_code(sender: Sender<ProcessResult>, phone_number: String) {
-        let secret_data = get_secret_data().unwrap();
+    pub async fn send_login_code(phone_number: String) -> Result<ProcessResult, ProcessError> {
+        let secret_data = get_secret_data()?;
 
         let tg_client = TGClient::connect(Config {
             session: Session::new(),
@@ -90,144 +99,228 @@ impl Client {
             params: Default::default(),
         })
         .await
-        .unwrap();
+        .map_err(|_| ProcessError::ClientIsNotConnected)?;
 
-        let login_token = tg_client.request_login_code(&phone_number).await.unwrap();
-        sender
-            .send(ProcessResult::LoginCodeSended(
-                login_token,
-                Client::new(tg_client, None),
-            ))
-            .unwrap();
+        let login_token = tg_client
+            .request_login_code(&phone_number)
+            .await
+            .map_err(|_| ProcessError::LoginCodeIsNotSended)?;
+        Ok(ProcessResult::LoginCodeSended(
+            login_token,
+            Client::new(tg_client, None),
+        ))
     }
 
     pub async fn sign_in_code(
         self: Self,
-        sender: Sender<ProcessResult>,
         received_code: String,
         login_token: Arc<LoginToken>,
-    ) {
+    ) -> Result<ProcessResult, ProcessError> {
         let tg_client = self.tg_client;
 
-        let user = tg_client
-            .sign_in(&login_token, &received_code)
-            .await
-            .unwrap();
+        let user = match tg_client.sign_in(&login_token, &received_code).await {
+            Ok(v) => Ok(v),
+            Err(err) => match err {
+                grammers_client::SignInError::SignUpRequired {
+                    terms_of_service: _,
+                } => Err(ProcessError::OtherSignInError),
+                grammers_client::SignInError::PasswordRequired(v) => {
+                    Err(ProcessError::PasswordRequired(v))
+                }
+                grammers_client::SignInError::InvalidCode => Err(ProcessError::InvalidCode),
+                grammers_client::SignInError::InvalidPassword => Err(ProcessError::InvalidPassword),
+                grammers_client::SignInError::Other(_) => Err(ProcessError::OtherSignInError),
+            },
+        }?;
 
         let path = format!("sessions/{}.session", user.id());
-        let _ = fs::write(&path, "");
-        let _ = tg_client.session().save_to_file(path);
+        fs::write(&path, "").map_err(|_| ProcessError::SessionFileIsNotExist)?;
+        tg_client
+            .session()
+            .save_to_file(path)
+            .map_err(|_| ProcessError::CannotSaveSessionInFile)?;
 
         if Self::find_chat_with_files(tg_client.iter_dialogs(), &user)
             .await
-            .is_none()
+            .is_err()
         {
             tg_client
                 .invoke(&CreateChat {
                     users: vec![enums::InputUser::User(InputUser {
                         user_id: user.id(),
-                        access_hash: user.pack().access_hash.unwrap(),
+                        access_hash: match user.pack().access_hash {
+                            Some(v) => v,
+                            None => return Err(ProcessError::AccessHashIsNone),
+                        },
                     })],
                     title: format!("TuchaCloud-{}", user.id()),
                     ttl_period: None,
                 })
                 .await
-                .unwrap();
+                .map_err(|_| ProcessError::CloudGroupIsNotCreated)?;
         }
 
-        let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user)
-            .await
-            .unwrap();
+        let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user).await?;
 
-        sender
-            .send(ProcessResult::LoggedInWithCode(
-                Client::new(tg_client, Some(chat)),
-                user.username().unwrap().to_string(),
-            ))
-            .unwrap();
+        Ok(ProcessResult::LoggedInWithCode(
+            Client::new(tg_client, Some(chat)),
+            match user.username() {
+                Some(v) => v,
+                None => return Err(ProcessError::UsernameIsNone),
+            }
+            .to_string(),
+        ))
     }
 
     pub async fn upload_files(
         self: Self,
-        sender: Sender<ProcessResult>,
         transferred_files: Vec<PathBuf>,
-    ) {
+    ) -> Result<ProcessResult, ProcessError> {
         let tg_client = self.tg_client;
         let tg_chat = self.tg_chat;
-        let creator = tg_client.get_me().await.unwrap();
+        let creator = tg_client
+            .get_me()
+            .await
+            .map_err(|_| ProcessError::CannotGetUserData)?;
 
         for file in transferred_files {
-            let file_metadata = FileMetadata::new(String::from(""), &creator);
+            let file_metadata = FileMetadata::new(String::from(""));
 
-            let message = InputMessage::text(serde_json::to_string(&file_metadata).unwrap())
-                .document(tg_client.upload_file(file.as_os_str()).await.unwrap());
+            let message = InputMessage::text(
+                serde_json::to_string(&file_metadata)
+                    .map_err(|_| ProcessError::CannotSerializeToString)?,
+            )
+            .document(
+                tg_client
+                    .upload_file(file.as_os_str())
+                    .await
+                    .map_err(|_| ProcessError::CanntoUploadFile)?,
+            );
 
-            let _ = &tg_client
-                .send_message(&tg_chat.clone().unwrap(), message)
-                .await;
+            let _message = &tg_client
+                .send_message(
+                    &match &tg_chat.clone() {
+                        Some(v) => v.clone(),
+                        None => {
+                            let chat =
+                                Self::find_chat_with_files(tg_client.iter_dialogs(), &creator)
+                                    .await?;
+                            chat
+                        }
+                    },
+                    message,
+                )
+                .await
+                .map_err(|_| ProcessError::MediaMessageIsNotSended)?;
         }
 
-        sender.send(ProcessResult::FilesUploaded).unwrap();
+        Ok(ProcessResult::FilesUploaded)
     }
 
-    pub async fn get_uploaded_files(self, sender: Sender<ProcessResult>) {
+    pub async fn get_uploaded_files(self) -> Result<ProcessResult, ProcessError> {
         let tg_client = self.tg_client;
-        let tg_chat = self.tg_chat.unwrap();
+        let user = tg_client
+            .get_me()
+            .await
+            .map_err(|_| ProcessError::CannotGetUserData)?;
+
+        let tg_chat = match self.tg_chat {
+            Some(v) => v.clone(),
+            None => {
+                let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user).await?;
+                chat
+            }
+        };
 
         let mut files = Vec::<File>::new();
-
         let mut messages = tg_client.iter_messages(&tg_chat.clone());
 
-        while let Some(message) = messages.next().await.unwrap() {
+        while let Some(message) = messages
+            .next()
+            .await
+            .map_err(|_| ProcessError::CannotReadMessages)?
+        {
             if let Ok(file_metadata) = serde_json::from_str::<FileMetadata>(message.text()) {
-                let media_enum = message.media().unwrap();
-                if let Media::Document(media) = media_enum {
-                    let file = File::new(file_metadata, message.id(), media.name().to_string());
+                if let Some(media) = message.media() {
+                    match media {
+                        Media::Document(document) => {
+                            let file =
+                                File::new(file_metadata, message.id(), document.name().to_string());
 
-                    files.push(file);
+                            files.push(file);
+                        }
+                        Media::Sticker(sticker) => {
+                            let file = File::new(
+                                file_metadata,
+                                message.id(),
+                                sticker.document.name().to_string(),
+                            );
+
+                            files.push(file);
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
 
-        sender
-            .send(ProcessResult::UploadedFilesReceived(
-                tg_client
-                    .get_me()
-                    .await
-                    .unwrap()
-                    .username()
-                    .unwrap()
-                    .to_string(),
-                files,
-            ))
-            .unwrap();
+        Ok(ProcessResult::UploadedFilesReceived(
+            match user.username() {
+                Some(v) => v,
+                None => return Err(ProcessError::UsernameIsNone),
+            }
+            .to_string(),
+            files,
+        ))
     }
 
-    pub async fn download_files(self, sender: Sender<ProcessResult>, message_ids: Vec<i32>) {
+    pub async fn download_files(
+        self,
+        message_ids: Vec<i32>,
+    ) -> Result<ProcessResult, ProcessError> {
         let tg_client = self.tg_client;
-        let user = tg_client.get_me().await.unwrap();
-        let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user)
+        let user = tg_client
+            .get_me()
             .await
-            .unwrap();
+            .map_err(|_| ProcessError::CannotGetUserData)?;
+        let chat = Self::find_chat_with_files(tg_client.iter_dialogs(), &user).await?;
 
-        let messages = tg_client
+        let mut messages = tg_client
             .get_messages_by_id(&chat, &message_ids)
             .await
-            .unwrap();
+            .map_err(|_| ProcessError::MessagesNotFound)?
+            .into_iter();
 
-        for message in messages {
-            match message.clone().unwrap().media().unwrap() {
-                Media::Document(document) => {
+        while let Some(Some(message)) = messages.next() {
+            if let Some(media) = message.clone().media() {
+                async fn download_file(message: Message, name: &str) -> Result<(), ProcessError> {
                     message
-                        .unwrap()
-                        .download_media(format!("{}/Downloads/{}", home_dir().unwrap().display().to_string(), document.name()))
+                        .download_media(format!(
+                            "{}/Downloads/{}",
+                            match home_dir() {
+                                Some(v) => v,
+                                None => return Err(ProcessError::HomeDirectoryIsNone),
+                            }
+                            .display()
+                            .to_string(),
+                            name
+                        ))
                         .await
-                        .unwrap();
+                        .map_err(|_| ProcessError::CannotDownloadMedia)?;
+                    Ok(())
                 }
-                _ => {}
+                match media {
+                    Media::Document(document) => download_file(message, document.name()).await?,
+                    Media::Sticker(sticker) => {
+                        download_file(message, sticker.document.name()).await?
+                    }
+                    _ => {}
+                }
+            } else {
+                return Err(ProcessError::MessageNotContainsMedia);
             }
         }
 
-        sender.send(ProcessResult::FilesDownloaded).unwrap();
+        Ok(ProcessResult::FilesDownloaded)
     }
 }
