@@ -6,7 +6,9 @@ use std::{
 use eframe::egui::{self, Color32, ComboBox, Layout, RichText, Spinner};
 
 use crate::{
-    enums::process::{current::CurrentProcess, new::NewProcess, result::ProcessResult},
+    enums::process::{
+        current::CurrentProcess, error::ProcessError, new::NewProcess, result::ProcessResult,
+    },
     types::{api_keys::APIKeys, client::Client},
 };
 
@@ -25,6 +27,13 @@ pub struct Window {
 }
 
 impl Window {
+    pub fn get_current_client(&self) -> Result<Client, ProcessError> {
+        match self.clients.get(&self.current_client) {
+            Some(v) => Ok(v.clone()),
+            None => Err(ProcessError::CurrentClientIsNone),
+        }
+    }
+
     pub fn header(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("tab").show(ctx, |ui| {
             ui.horizontal(|ui| {

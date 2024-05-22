@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use crate::types::client::Client;
 use crate::ui::window::Window;
+use std::path::PathBuf;
 
 use crate::enums::process::current::CurrentProcess;
 use crate::utils;
@@ -16,6 +16,7 @@ pub enum NewProcess {
     SingIn,
     UploadFiles(Vec<PathBuf>),
     DownloadFiles(Vec<i32>),
+    DeleteFiles(Vec<i32>),
 }
 
 impl NewProcess {
@@ -85,33 +86,32 @@ impl NewProcess {
 
                 let sender = window.sender.clone();
                 let transferred_files = transferred_files.clone();
-                let client = match window.clients.get(&window.current_client) {
-                    Some(v) => v,
-                    None => {
-                        let _sender_result =
-                            sender.send(ProcessResult::Error(ProcessError::CurrentClientIsNone));
+                let client = match window.get_current_client() {
+                    Ok(v) => v,
+                    Err(err) => {
+                        let _ = sender.send(err.to_process_result());
                         return;
                     }
-                }
-                .clone();
+                };
 
                 tokio::spawn(async move {
-                    utils::send_result(sender, client.upload_files(transferred_files.clone()).await);
+                    utils::send_result(
+                        sender,
+                        client.upload_files(transferred_files.clone()).await,
+                    );
                 });
             }
             NewProcess::GetUploadedFiles => {
                 window.current_process = CurrentProcess::GettingUploadedFiles;
 
                 let sender = window.sender.clone();
-                let client = match window.clients.get(&window.current_client) {
-                    Some(v) => v,
-                    None => {
-                        let _sender_result =
-                            sender.send(ProcessResult::Error(ProcessError::CurrentClientIsNone));
+                let client = match window.get_current_client() {
+                    Ok(v) => v,
+                    Err(err) => {
+                        let _ = sender.send(err.to_process_result());
                         return;
                     }
-                }
-                .clone();
+                };
 
                 tokio::spawn(async move {
                     utils::send_result(sender, client.get_uploaded_files().await);
@@ -134,6 +134,23 @@ impl NewProcess {
 
                 tokio::spawn(async move {
                     utils::send_result(sender, client.download_files(message_ids.clone()).await);
+                });
+            }
+            NewProcess::DeleteFiles(message_ids) => {
+                window.current_process = CurrentProcess::DeletingFiles;
+
+                let sender = window.sender.clone();
+                let client = match window.get_current_client() {
+                    Ok(v) => v,
+                    Err(err) => {
+                        let _ = sender.send(err.to_process_result());
+                        return;
+                    }
+                };
+                let message_ids = message_ids.clone();
+
+                tokio::spawn(async move {
+                    utils::send_result(sender, client.delete_files(message_ids).await);
                 });
             }
         }

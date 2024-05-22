@@ -18,6 +18,7 @@ pub enum ProcessResult {
     FilesUploaded,
     UploadedFilesReceived(String, Vec<File>),
     FilesDownloaded,
+    FilesDeleted,
 }
 
 impl ProcessResult {
@@ -68,6 +69,11 @@ impl ProcessResult {
                 }
                 ProcessResult::Error(error) => {
                     window.current_process = CurrentProcess::Error(error);
+                }
+                ProcessResult::FilesDeleted => {
+                    window.current_process = CurrentProcess::Idle;
+
+                    NewProcess::GetUploadedFiles.start(window);
                 }
             }
         }

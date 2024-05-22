@@ -1,8 +1,11 @@
 use std::fmt::Display;
 
+use super::result::ProcessResult;
+
 #[derive(Debug, Clone)]
 pub enum ProcessError {
     AccessHashIsNone,
+    CannotDeleteFile,
     CannotDownloadMedia,
     CannotGetDialogs,
     CannotGetUserData,
@@ -42,6 +45,7 @@ impl Display for ProcessError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProcessError::AccessHashIsNone => write!(f, "access_hash is None."),
+            ProcessError::CannotDeleteFile => write!(f, "Cannot delete file."),
             ProcessError::CannotDownloadMedia => write!(f, "Cannot download media from message."),
             ProcessError::CannotGetDialogs => write!(f, "Cannot get dialogs."),
             ProcessError::CannotGetUserData => write!(f, "Cannot get user data."),
@@ -80,5 +84,11 @@ impl Display for ProcessError {
             ProcessError::UserIsNone => write!(f, "User is None."),
             ProcessError::UsernameIsNone => write!(f, "Username is None."),
         }
+    }
+}
+
+impl ProcessError {
+    pub fn to_process_result(self) -> ProcessResult {
+        ProcessResult::Error(self)
     }
 }

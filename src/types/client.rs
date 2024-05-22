@@ -301,4 +301,16 @@ impl Client {
 
         Ok(ProcessResult::FilesDownloaded)
     }
+    pub async fn delete_files(
+        self,
+        message_ids: Vec<i32>,
+    ) -> Result<ProcessResult, ProcessError> {
+        let mut messages = self.get_messages_by_id(&message_ids).await?;
+
+        while let Some(Some(message)) = messages.next() {
+            message.delete().await.map_err(|_| ProcessError::CannotDeleteFile)?;
+        }
+
+        Ok(ProcessResult::FilesDeleted)
+    }
 }

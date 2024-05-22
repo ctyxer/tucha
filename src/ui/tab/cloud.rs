@@ -40,7 +40,7 @@ impl Cloud {
                 .clone()
             {
                 Grid::new("Cloud")
-                    .num_columns(2)
+                    .num_columns(3)
                     .striped(true)
                     .max_col_width(ui.available_width())
                     .show(ui, |ui| {
@@ -52,6 +52,10 @@ impl Cloud {
                                     |ui| {
                                         if ui.button("Download").clicked() {
                                             NewProcess::DownloadFiles(vec![file.message_id])
+                                                .start(window);
+                                        }
+                                        if ui.button("Delete").clicked() {
+                                            NewProcess::DeleteFiles(vec![file.message_id])
                                                 .start(window);
                                         }
                                     },
