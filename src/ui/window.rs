@@ -47,13 +47,16 @@ impl Window {
                             .show_ui(ui, |ui| {
                                 let mut changed = false;
                                 for client in &self.clients {
-                                    changed = ui
+                                    let is_current_changed = ui
                                         .selectable_value(
                                             &mut self.current_client,
                                             client.0.to_string(),
                                             client.0,
                                         )
                                         .changed();
+                                    if !changed && is_current_changed {
+                                        changed = true;
+                                    }
                                 }
                                 if changed {
                                     NewProcess::GetUploadedFiles.start(self);
