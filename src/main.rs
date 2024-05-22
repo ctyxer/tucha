@@ -3,7 +3,6 @@
 mod enums;
 mod types;
 mod ui;
-mod utils;
 
 use std::{env::set_current_dir, fs};
 
@@ -22,9 +21,6 @@ async fn main() -> Result<(), eframe::Error> {
         if set_current_dir(&tucha_location).is_err() {
             panic!("Failed to set current directory in path: {}", &tucha_location.display().to_string());
         }
-        
-
-        dotenv::dotenv().ok();
 
         let options = eframe::NativeOptions {
             ..Default::default()

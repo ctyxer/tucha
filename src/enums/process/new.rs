@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
+use crate::types::api_keys::APIKeys;
 use crate::types::client::Client;
 use crate::ui::window::Window;
 
@@ -10,6 +11,7 @@ use super::error::ProcessError;
 use super::result::ProcessResult;
 
 pub enum NewProcess {
+    StoreAPIKeysInFile,
     ConnectToAllSavedClients,
     GetUploadedFiles,
     SendLoginCode,
@@ -33,8 +35,29 @@ impl NewProcess {
         }
     }
 
+    fn store_api(api_id: String, api_hash: String) -> Result<ProcessResult, ProcessError> {
+        APIKeys::new(
+            api_id
+                .parse::<i32>()
+                .map_err(|_| ProcessError::CannotParseAPIIDToInteger)?,
+            api_hash.clone(),
+        )
+        .save()
+        .map_err(|_| ProcessError::CannotSaveAPIKeysInFile)?;
+        Ok(ProcessResult::StoredAPIKeys)
+    }
+
     pub fn start(window: &mut Window, new_process: NewProcess) {
         match &new_process {
+            NewProcess::StoreAPIKeysInFile => {
+                Self::send_result(
+                    window.sender.clone(),
+                    Self::store_api(
+                        window.api_tab.api_id.clone(),
+                        window.api_tab.api_hash.clone(),
+                    ),
+                );
+            }
             NewProcess::ConnectToAllSavedClients => {
                 window.current_process = CurrentProcess::ConnectingToAllSavedClients;
                 let sender = window.sender.clone();

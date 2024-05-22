@@ -1,13 +1,10 @@
 pub mod new_session;
 pub mod cloud;
+pub mod api;
 
+#[derive(PartialEq)]
 pub enum Tab {
+    API,
     NewSession,
-    Cloud,  
-}
-
-impl PartialEq for Tab{
-    fn eq(&self, other: &Self) -> bool {
-        core::mem::discriminant(self) == core::mem::discriminant(other)
-    }
+    Cloud,
 }

@@ -11,6 +11,7 @@ use super::{current::CurrentProcess, error::ProcessError, new::NewProcess};
 
 pub enum ProcessResult {
     Error(ProcessError),
+    StoredAPIKeys,
     ConnectedToSavedClients(BTreeMap<String, Client>),
     LoginCodeSended(LoginToken, Client),
     LoggedIn(Client, String),
@@ -33,6 +34,10 @@ impl ProcessResult {
 
                         NewProcess::start(window, NewProcess::GetUploadedFiles);
                     }
+                }
+                ProcessResult::StoredAPIKeys => {
+                    window.tab = Tab::Cloud;
+                    NewProcess::start(window, NewProcess::ConnectToAllSavedClients);
                 }
                 ProcessResult::LoginCodeSended(login_token, client) => {
                     window.current_process = CurrentProcess::Idle;

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eframe::egui::{Button, Grid, Layout, TextEdit, Ui};
+use eframe::egui::{self, Button, Context, Grid, Layout, TextEdit};
 use grammers_client::types::LoginToken;
 
 use crate::{enums::process::new::NewProcess, types::client::Client, ui::window::Window};
@@ -28,52 +28,57 @@ impl NewSession {
         }
     }
 
-    pub fn ui(window: &mut Window, ui: &mut Ui) {
-        Grid::new("New session").num_columns(2).show(ui, |ui| {
-            ui.label("Phone number: ");
-            ui.add_enabled(
-                !window.new_session_tab.is_code_received,
-                TextEdit::singleline(&mut window.new_session_tab.phone_number)
-                    .min_size(ui.available_size()),
-            );
-            ui.end_row();
+    pub fn ui(window: &mut Window, ctx: &Context) {
+        window.header(ctx);
 
-            ui.label("Password (if required): ");
-            ui.add(
-                TextEdit::singleline(&mut window.new_session_tab.user_password)
-                    .min_size(ui.available_size()),
-            );
-            ui.end_row();
-
-            ui.label("Received code: ");
-            ui.with_layout(Layout::right_to_left(eframe::egui::Align::Min), |ui| {
-                if ui.button("Send code").clicked() {
-                    NewProcess::start(window, NewProcess::SendLoginCode);
-                };
-
-                let received_code_singleline =
-                    TextEdit::singleline(&mut window.new_session_tab.reveived_code)
-                        .min_size(ui.available_size());
-
+        egui::CentralPanel::default().show(ctx, |ui| {
+            Grid::new("New session").num_columns(2).show(ui, |ui| {
+                ui.label("Phone number: ");
                 ui.add_enabled(
-                    window.new_session_tab.is_code_received,
-                    received_code_singleline,
+                    !window.new_session_tab.is_code_received,
+                    TextEdit::singleline(&mut window.new_session_tab.phone_number)
+                        .min_size(ui.available_size()),
                 );
-            });
-            ui.end_row();
+                ui.end_row();
 
-            let sign_in_button = Button::new("Sign in");
-            if ui
-                .add_enabled(
-                    window.new_session_tab.is_code_received
-                        && window.new_session_tab.reveived_code.len() >= 5,
-                    sign_in_button,
-                )
-                .clicked()
-            {
-                NewProcess::start(window, NewProcess::SingIn);
-            };
-            ui.end_row();
+                ui.label("Password (if required): ");
+                ui.add(
+                    TextEdit::singleline(&mut window.new_session_tab.user_password)
+                        .min_size(ui.available_size()),
+                );
+                ui.end_row();
+
+                ui.label("Received code: ");
+                ui.with_layout(Layout::right_to_left(eframe::egui::Align::Min), |ui| {
+                    if ui.button("Send code").clicked() {
+                        NewProcess::start(window, NewProcess::SendLoginCode);
+                    };
+
+                    let received_code_singleline =
+                        TextEdit::singleline(&mut window.new_session_tab.reveived_code)
+                            .min_size(ui.available_size());
+
+                    ui.add_enabled(
+                        window.new_session_tab.is_code_received,
+                        received_code_singleline,
+                    );
+                });
+                ui.end_row();
+
+                let sign_in_button = Button::new("Sign in");
+                if ui
+                    .add_enabled(
+                        window.new_session_tab.is_code_received
+                            && window.new_session_tab.reveived_code.len() >= 5,
+                        sign_in_button,
+                    )
+                    .clicked()
+                {
+                    NewProcess::start(window, NewProcess::SingIn);
+                };
+                ui.end_row();
+            });
         });
+        window.footer(ctx);
     }
 }

@@ -13,12 +13,9 @@ use tl::{
     types::InputUser,
 };
 
-use crate::{
-    enums::process::{error::ProcessError, result::ProcessResult},
-    utils::get_secret_data,
-};
+use crate::enums::process::{error::ProcessError, result::ProcessResult};
 
-use super::{file::metadata::FileMetadata, file::File};
+use super::{api_keys::APIKeys, file::{metadata::FileMetadata, File}};
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -58,13 +55,13 @@ impl Client {
 
         while let Some(Ok(session_file)) = session_files.next() {
             let path = session_file.path();
-            let secret_data = get_secret_data()?;
+            let secret_data = APIKeys::get()?;
 
             let tg_client = TGClient::connect(Config {
                 session: Session::load_file(path)
                     .map_err(|_| ProcessError::CannotLoadSessionFile)?,
-                api_id: secret_data.0,
-                api_hash: secret_data.1,
+                api_id: secret_data.api_id,
+                api_hash: secret_data.api_hash,
                 params: Default::default(),
             })
             .await
@@ -90,12 +87,12 @@ impl Client {
     }
 
     pub async fn send_login_code(phone_number: String) -> Result<ProcessResult, ProcessError> {
-        let secret_data = get_secret_data()?;
+        let secret_data = APIKeys::get()?;
 
         let tg_client = TGClient::connect(Config {
             session: Session::new(),
-            api_id: secret_data.0,
-            api_hash: secret_data.1,
+            api_id: secret_data.api_id,
+            api_hash: secret_data.api_hash,
             params: Default::default(),
         })
         .await
@@ -222,7 +219,7 @@ impl Client {
                 tg_client
                     .upload_file(file.as_os_str())
                     .await
-                    .map_err(|_| ProcessError::CanntoUploadFile)?,
+                    .map_err(|_| ProcessError::CannotUploadFile)?,
             );
 
             let _message = &tg_client

@@ -7,10 +7,11 @@ pub enum ProcessError {
     CannotGetDialogs,
     CannotGetUserData,
     CannotLoadSessionFile,
+    CannotParseAPIIDToInteger,
     CannotReadMessages,
     CannotReadSessionsDirectory,
     CannotSerializeToString,
-    CanntoUploadFile,
+    CannotUploadFile,
     ChatIsNotFound,
     ClientIsNotConnected,
     CloudGroupIsNotCreated,
@@ -29,6 +30,7 @@ pub enum ProcessError {
     MessagesNotFound,
     OtherSignInError,
     PasswordRequired,
+    CannotSaveAPIKeysInFile,
     CannotSaveSessionInFile,
     UsernameIsNone,
 }
@@ -43,6 +45,7 @@ impl Display for ProcessError {
             ProcessError::CannotGetDialogs => write!(f, "Cannot get dialogs."),
             ProcessError::CannotGetUserData => write!(f, "Cannot get user data."),
             ProcessError::CannotLoadSessionFile => write!(f, "Cannot load session file."),
+            ProcessError::CannotParseAPIIDToInteger => write!(f, "Parse api_id to integer"),
             ProcessError::CannotReadMessages => write!(f, "Cannot read messages."),
             ProcessError::CannotReadSessionsDirectory => {
                 write!(f, "Cannot read directory with sessions files.")
@@ -50,7 +53,7 @@ impl Display for ProcessError {
             ProcessError::CannotSerializeToString => {
                 write!(f, "Cannot serialize file metadata to string.")
             }
-            ProcessError::CanntoUploadFile => write!(f, "Cannot upload file."),
+            ProcessError::CannotUploadFile => write!(f, "Cannot upload file."),
             ProcessError::ChatIsNotFound => write!(f, "Chat is not found."),
             ProcessError::ClientIsNotConnected => write!(f, "Client is not connected."),
             ProcessError::CloudGroupIsNotCreated => write!(f, "Cloud gropup is not created."),
@@ -71,6 +74,7 @@ impl Display for ProcessError {
             ProcessError::MessagesNotFound => write!(f, "Message not found."),
             ProcessError::OtherSignInError => write!(f, "Other sign in error."),
             ProcessError::PasswordRequired => write!(f, "Password required."),
+            ProcessError::CannotSaveAPIKeysInFile => write!(f, "Cannot save api keys in file"),
             ProcessError::CannotSaveSessionInFile => write!(f, "Cannot save session in file."),
             ProcessError::UsernameIsNone => write!(f, "Username is None."),
         }

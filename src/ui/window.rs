@@ -7,10 +7,10 @@ use eframe::egui::{self, Color32, ComboBox, Layout, RichText, Spinner};
 
 use crate::{
     enums::process::{current::CurrentProcess, new::NewProcess, result::ProcessResult},
-    types::client::Client,
+    types::{api_keys::APIKeys, client::Client},
 };
 
-use super::tab::{cloud::Cloud, new_session::NewSession, Tab};
+use super::tab::{api::API, cloud::Cloud, new_session::NewSession, Tab};
 
 pub struct Window {
     pub sender: Sender<ProcessResult>,
@@ -21,11 +21,11 @@ pub struct Window {
     pub current_process: CurrentProcess,
     pub new_session_tab: NewSession,
     pub cloud_tab: Cloud,
+    pub api_tab: API,
 }
 
-impl eframe::App for Window {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ProcessResult::check_result(self);
+impl Window {
+    pub fn header(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("tab").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.tab, Tab::Cloud, "Cloud");
@@ -59,12 +59,9 @@ impl eframe::App for Window {
                 });
             });
         });
+    }
 
-        egui::CentralPanel::default().show(ctx, |ui| match &self.tab {
-            Tab::NewSession => NewSession::ui(self, ui),
-            Tab::Cloud => Cloud::ui(self, ui),
-        });
-
+    pub fn footer(&mut self, ctx: &egui::Context) {
         if !matches!(self.current_process, CurrentProcess::Idle) {
             egui::TopBottomPanel::bottom("process").show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -89,22 +86,41 @@ impl eframe::App for Window {
     }
 }
 
+impl eframe::App for Window {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ProcessResult::check_result(self);
+        match &self.tab {
+            Tab::NewSession => NewSession::ui(self, ctx),
+            Tab::Cloud => Cloud::ui(self, ctx),
+            Tab::API => API::ui(self, ctx),
+        }
+    }
+}
+
 impl Default for Window {
     fn default() -> Self {
         let (sender, receiver) = mpsc::channel();
+
+        let api_keys = APIKeys::get();
 
         let mut window = Self {
             sender,
             receiver,
             clients: BTreeMap::new(),
             current_client: String::new(),
-            tab: Tab::Cloud,
+            tab: match &api_keys {
+                Ok(_) => Tab::Cloud,
+                Err(_) => Tab::API,
+            },
             current_process: CurrentProcess::Idle,
             new_session_tab: NewSession::new(),
             cloud_tab: Cloud::new(),
+            api_tab: API::new(),
         };
 
-        NewProcess::start(&mut window, NewProcess::ConnectToAllSavedClients);
+        if api_keys.is_ok() {
+            NewProcess::start(&mut window, NewProcess::ConnectToAllSavedClients);
+        }
 
         window
     }
