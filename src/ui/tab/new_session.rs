@@ -51,7 +51,7 @@ impl NewSession {
                 ui.label("Received code: ");
                 ui.with_layout(Layout::right_to_left(eframe::egui::Align::Min), |ui| {
                     if ui.button("Send code").clicked() {
-                        NewProcess::start(window, NewProcess::SendLoginCode);
+                        NewProcess::SendLoginCode.start(window);
                     };
 
                     let received_code_singleline =
@@ -74,7 +74,7 @@ impl NewSession {
                     )
                     .clicked()
                 {
-                    NewProcess::start(window, NewProcess::SingIn);
+                    NewProcess::SingIn.start(window);
                 };
                 ui.end_row();
             });

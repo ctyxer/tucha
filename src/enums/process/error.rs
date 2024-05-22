@@ -12,7 +12,7 @@ pub enum ProcessError {
     CannotReadSessionsDirectory,
     CannotSerializeToString,
     CannotUploadFile,
-    ChatIsNotFound,
+    ChatIsNone,
     ClientIsNotConnected,
     CloudGroupIsNotCreated,
     CurrentClientIsNone,
@@ -32,6 +32,7 @@ pub enum ProcessError {
     PasswordRequired,
     CannotSaveAPIKeysInFile,
     CannotSaveSessionInFile,
+    UserIsNone,
     UsernameIsNone,
 }
 
@@ -54,7 +55,7 @@ impl Display for ProcessError {
                 write!(f, "Cannot serialize file metadata to string.")
             }
             ProcessError::CannotUploadFile => write!(f, "Cannot upload file."),
-            ProcessError::ChatIsNotFound => write!(f, "Chat is not found."),
+            ProcessError::ChatIsNone => write!(f, "Chat is None."),
             ProcessError::ClientIsNotConnected => write!(f, "Client is not connected."),
             ProcessError::CloudGroupIsNotCreated => write!(f, "Cloud gropup is not created."),
             ProcessError::CurrentClientIsNone => write!(f, "Current client is None."),
@@ -76,6 +77,7 @@ impl Display for ProcessError {
             ProcessError::PasswordRequired => write!(f, "Password required."),
             ProcessError::CannotSaveAPIKeysInFile => write!(f, "Cannot save api keys in file"),
             ProcessError::CannotSaveSessionInFile => write!(f, "Cannot save session in file."),
+            ProcessError::UserIsNone => write!(f, "User is None."),
             ProcessError::UsernameIsNone => write!(f, "Username is None."),
         }
     }

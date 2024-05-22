@@ -1,6 +1,6 @@
 use eframe::egui::{self, Button, Context, Grid};
 
-use crate::{enums::process::new::NewProcess,ui::window::Window};
+use crate::{enums::process::new::NewProcess, ui::window::Window};
 
 pub struct API {
     pub api_id: String,
@@ -40,7 +40,7 @@ impl API {
                     )
                     .clicked()
                 {
-                    NewProcess::start(window, NewProcess::StoreAPIKeysInFile);
+                    NewProcess::StoreAPIKeysInFile.start(window);
                 };
             });
         });

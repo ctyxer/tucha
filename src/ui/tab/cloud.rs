@@ -23,12 +23,12 @@ impl Cloud {
             ui.horizontal(|ui| {
                 if ui.button("Upload file").clicked() {
                     if let Some(transferred_files) = rfd::FileDialog::new().pick_files() {
-                        NewProcess::start(window, NewProcess::UploadFiles(transferred_files));
+                        NewProcess::UploadFiles(transferred_files).start(window);
                     }
                 }
 
                 if ui.button("Refresh").clicked() {
-                    NewProcess::start(window, NewProcess::GetUploadedFiles);
+                    NewProcess::GetUploadedFiles.start(window);
                 }
             });
 
@@ -51,10 +51,8 @@ impl Cloud {
                                     Layout::right_to_left(eframe::egui::Align::Max),
                                     |ui| {
                                         if ui.button("Download").clicked() {
-                                            NewProcess::start(
-                                                window,
-                                                NewProcess::DownloadFiles(vec![file.message_id]),
-                                            );
+                                            NewProcess::DownloadFiles(vec![file.message_id])
+                                                .start(window);
                                         }
                                     },
                                 );

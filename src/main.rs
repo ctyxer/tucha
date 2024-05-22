@@ -3,6 +3,7 @@
 mod enums;
 mod types;
 mod ui;
+mod utils;
 
 use std::{env::set_current_dir, fs};
 

@@ -32,12 +32,12 @@ impl ProcessResult {
                         window.clients = clients;
                         window.current_client = first_client.0.to_string();
 
-                        NewProcess::start(window, NewProcess::GetUploadedFiles);
+                        NewProcess::GetUploadedFiles.start(window);
                     }
                 }
                 ProcessResult::StoredAPIKeys => {
                     window.tab = Tab::Cloud;
-                    NewProcess::start(window, NewProcess::ConnectToAllSavedClients);
+                    NewProcess::ConnectToAllSavedClients.start(window);
                 }
                 ProcessResult::LoginCodeSended(login_token, client) => {
                     window.current_process = CurrentProcess::Idle;
@@ -56,7 +56,7 @@ impl ProcessResult {
                 ProcessResult::FilesUploaded => {
                     window.current_process = CurrentProcess::Idle;
 
-                    NewProcess::start(window, NewProcess::GetUploadedFiles);
+                    NewProcess::GetUploadedFiles.start(window);
                 }
                 ProcessResult::UploadedFilesReceived(client_name, files) => {
                     window.current_process = CurrentProcess::Idle;

@@ -47,13 +47,13 @@ impl Window {
                                         .changed();
                                 }
                                 if changed {
-                                    NewProcess::start(self, NewProcess::GetUploadedFiles);
+                                    NewProcess::GetUploadedFiles.start(self);
                                 }
                             });
                         if ui.button("Restart clients").clicked() {
                             self.clients.clear();
                             self.cloud_tab.clients_files.clear();
-                            NewProcess::start(self, NewProcess::ConnectToAllSavedClients);
+                            NewProcess::ConnectToAllSavedClients.start(self);
                         }
                     }
                 });
@@ -119,7 +119,7 @@ impl Default for Window {
         };
 
         if api_keys.is_ok() {
-            NewProcess::start(&mut window, NewProcess::ConnectToAllSavedClients);
+            NewProcess::ConnectToAllSavedClients.start(&mut window);
         }
 
         window
