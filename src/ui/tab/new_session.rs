@@ -3,7 +3,7 @@ use std::sync::Arc;
 use eframe::egui::{self, Button, Context, Grid, Layout, TextEdit};
 use grammers_client::types::LoginToken;
 
-use crate::{enums::process::new::NewProcess, types::client::Client, ui::window::Window};
+use crate::{enums::NewProcess, types::Client, ui::window::Window};
 
 pub struct NewSession {
     pub new_session_name: String,

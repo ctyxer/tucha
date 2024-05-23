@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use eframe::egui::{self, Context, Grid, Layout};
 
-use crate::{enums::process::new::NewProcess, types::file::File, ui::window::Window};
+use crate::{enums::NewProcess, types::File, ui::window::Window};
 
 #[derive(Clone)]
 pub struct Cloud {

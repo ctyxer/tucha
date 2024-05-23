@@ -9,14 +9,11 @@ use grammers_tl_types as tl;
 use tl::{enums, functions::messages::CreateChat, types::InputUser};
 
 use crate::{
-    enums::process::{error::ProcessError, result::ProcessResult},
+    enums::{ProcessError, ProcessResult},
     utils::{self},
 };
 
-use super::{
-    api_keys::APIKeys,
-    file::{metadata::FileMetadata, File},
-};
+use super::{APIKeys, File, FileMetadata};
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -105,7 +102,7 @@ impl Client {
 
         while let Some(Ok(session_file)) = session_files.next() {
             let path = session_file.path();
-            let secret_data = APIKeys::get()?;
+            let secret_data = APIKeys::new();
 
             let tg_client = TGClient::connect(Config {
                 session: Session::load_file(path)
@@ -125,7 +122,7 @@ impl Client {
     }
 
     pub async fn send_login_code(phone_number: String) -> Result<ProcessResult, ProcessError> {
-        let secret_data = APIKeys::get()?;
+        let secret_data = APIKeys::new();
 
         let tg_client = TGClient::connect(Config {
             session: Session::new(),
@@ -301,14 +298,14 @@ impl Client {
 
         Ok(ProcessResult::FilesDownloaded)
     }
-    pub async fn delete_files(
-        self,
-        message_ids: Vec<i32>,
-    ) -> Result<ProcessResult, ProcessError> {
+    pub async fn delete_files(self, message_ids: Vec<i32>) -> Result<ProcessResult, ProcessError> {
         let mut messages = self.get_messages_by_id(&message_ids).await?;
 
         while let Some(Some(message)) = messages.next() {
-            message.delete().await.map_err(|_| ProcessError::CannotDeleteFile)?;
+            message
+                .delete()
+                .await
+                .map_err(|_| ProcessError::CannotDeleteFile)?;
         }
 
         Ok(ProcessResult::FilesDeleted)

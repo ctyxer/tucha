@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::result::ProcessResult;
+use super::ProcessResult;
 
 #[derive(Debug, Clone)]
 pub enum ProcessError {
@@ -10,7 +10,6 @@ pub enum ProcessError {
     CannotGetDialogs,
     CannotGetUserData,
     CannotLoadSessionFile,
-    CannotParseAPIIDToInteger,
     CannotReadMessages,
     CannotReadSessionsDirectory,
     CannotSerializeToString,
@@ -23,7 +22,6 @@ pub enum ProcessError {
     SignUpRequired,
     HomeDirectoryIsNone,
     IncompleteClientIsNone,
-    InvalidAPI,
     InvalidCode,
     InvalidPassword,
     LoginCodeIsNotSended,
@@ -33,7 +31,6 @@ pub enum ProcessError {
     MessagesNotFound,
     OtherSignInError,
     PasswordRequired,
-    CannotSaveAPIKeysInFile,
     CannotSaveSessionInFile,
     UserIsNone,
     UsernameIsNone,
@@ -50,7 +47,6 @@ impl Display for ProcessError {
             ProcessError::CannotGetDialogs => write!(f, "Cannot get dialogs."),
             ProcessError::CannotGetUserData => write!(f, "Cannot get user data."),
             ProcessError::CannotLoadSessionFile => write!(f, "Cannot load session file."),
-            ProcessError::CannotParseAPIIDToInteger => write!(f, "Parse api_id to integer"),
             ProcessError::CannotReadMessages => write!(f, "Cannot read messages."),
             ProcessError::CannotReadSessionsDirectory => {
                 write!(f, "Cannot read directory with sessions files.")
@@ -69,7 +65,6 @@ impl Display for ProcessError {
             ProcessError::IncompleteClientIsNone => {
                 write!(f, "Incomplete telegram client is None.")
             }
-            ProcessError::InvalidAPI => write!(f, "Invalid API."),
             ProcessError::InvalidCode => write!(f, "Invalid code."),
             ProcessError::InvalidPassword => write!(f, "Invalid password."),
             ProcessError::LoginCodeIsNotSended => write!(f, "Login code is not sended."),
@@ -79,7 +74,6 @@ impl Display for ProcessError {
             ProcessError::MessagesNotFound => write!(f, "Message not found."),
             ProcessError::OtherSignInError => write!(f, "Other sign in error."),
             ProcessError::PasswordRequired => write!(f, "Password required."),
-            ProcessError::CannotSaveAPIKeysInFile => write!(f, "Cannot save api keys in file"),
             ProcessError::CannotSaveSessionInFile => write!(f, "Cannot save session in file."),
             ProcessError::UserIsNone => write!(f, "User is None."),
             ProcessError::UsernameIsNone => write!(f, "Username is None."),

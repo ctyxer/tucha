@@ -5,14 +5,9 @@ use std::{
 
 use eframe::egui::{self, Color32, ComboBox, Layout, RichText, Spinner};
 
-use crate::{
-    enums::process::{
-        current::CurrentProcess, error::ProcessError, new::NewProcess, result::ProcessResult,
-    },
-    types::{api_keys::APIKeys, client::Client},
-};
+use crate::{enums::*, types::*};
 
-use super::tab::{api::API, cloud::Cloud, new_session::NewSession, Tab};
+use super::tab::{Cloud, NewSession, Tab};
 
 pub struct Window {
     pub sender: Sender<ProcessResult>,
@@ -23,7 +18,6 @@ pub struct Window {
     pub current_process: CurrentProcess,
     pub new_session_tab: NewSession,
     pub cloud_tab: Cloud,
-    pub api_tab: API,
 }
 
 impl Window {
@@ -45,20 +39,21 @@ impl Window {
                         ComboBox::from_id_source("current-client")
                             .selected_text(format!("{}", self.current_client))
                             .show_ui(ui, |ui| {
-                                let mut changed = false;
+                                let mut is_changed = false;
                                 for client in &self.clients {
-                                    let is_current_changed = ui
-                                        .selectable_value(
-                                            &mut self.current_client,
-                                            client.0.to_string(),
-                                            client.0,
-                                        )
-                                        .changed();
-                                    if !changed && is_current_changed {
-                                        changed = true;
+                                    if !is_changed
+                                        && ui
+                                            .selectable_value(
+                                                &mut self.current_client,
+                                                client.0.to_string(),
+                                                client.0,
+                                            )
+                                            .changed()
+                                    {
+                                        is_changed = true;
                                     }
                                 }
-                                if changed {
+                                if is_changed {
                                     NewProcess::GetUploadedFiles.start(self);
                                 }
                             });
@@ -104,7 +99,6 @@ impl eframe::App for Window {
         match &self.tab {
             Tab::NewSession => NewSession::ui(self, ctx),
             Tab::Cloud => Cloud::ui(self, ctx),
-            Tab::API => API::ui(self, ctx),
         }
     }
 }
@@ -113,26 +107,18 @@ impl Default for Window {
     fn default() -> Self {
         let (sender, receiver) = mpsc::channel();
 
-        let api_keys = APIKeys::get();
-
         let mut window = Self {
             sender,
             receiver,
             clients: BTreeMap::new(),
             current_client: String::new(),
-            tab: match &api_keys {
-                Ok(_) => Tab::Cloud,
-                Err(_) => Tab::API,
-            },
+            tab: Tab::Cloud,
             current_process: CurrentProcess::Idle,
             new_session_tab: NewSession::new(),
             cloud_tab: Cloud::new(),
-            api_tab: API::new(),
         };
 
-        if api_keys.is_ok() {
-            NewProcess::ConnectToAllSavedClients.start(&mut window);
-        }
+        NewProcess::ConnectToAllSavedClients.start(&mut window);
 
         window
     }

@@ -1,6 +1,4 @@
-use self::metadata::FileMetadata;
-
-pub mod metadata;
+use super::FileMetadata;
 
 #[derive(Debug, Clone)]
 pub struct File {

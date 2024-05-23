@@ -3,15 +3,14 @@ use std::{collections::BTreeMap, sync::Arc};
 use grammers_client::types::LoginToken;
 
 use crate::{
-    types::{client::Client, file::File},
+    types::{Client, File},
     ui::{tab::Tab, window::Window},
 };
 
-use super::{current::CurrentProcess, error::ProcessError, new::NewProcess};
+use super::{CurrentProcess, NewProcess, ProcessError};
 
 pub enum ProcessResult {
     Error(ProcessError),
-    StoredAPIKeys,
     ConnectedToSavedClients(BTreeMap<String, Client>),
     LoginCodeSended(LoginToken, Client),
     LoggedIn(Client, String),
@@ -35,10 +34,6 @@ impl ProcessResult {
 
                         NewProcess::GetUploadedFiles.start(window);
                     }
-                }
-                ProcessResult::StoredAPIKeys => {
-                    window.tab = Tab::Cloud;
-                    NewProcess::ConnectToAllSavedClients.start(window);
                 }
                 ProcessResult::LoginCodeSended(login_token, client) => {
                     window.current_process = CurrentProcess::Idle;

@@ -3,10 +3,7 @@ use std::sync::mpsc::Sender;
 use dirs::home_dir;
 use grammers_client::types::Message;
 
-use crate::{
-    enums::process::{error::ProcessError, result::ProcessResult},
-    types::api_keys::APIKeys,
-};
+use crate::enums::{ProcessError, ProcessResult};
 
 pub fn send_result(
     sender: Sender<ProcessResult>,
@@ -20,18 +17,6 @@ pub fn send_result(
             let _ = sender.send(ProcessResult::Error(e));
         }
     }
-}
-
-pub fn store_api(api_id: String, api_hash: String) -> Result<ProcessResult, ProcessError> {
-    APIKeys::new(
-        api_id
-            .parse::<i32>()
-            .map_err(|_| ProcessError::CannotParseAPIIDToInteger)?,
-        api_hash.clone(),
-    )
-    .save()
-    .map_err(|_| ProcessError::CannotSaveAPIKeysInFile)?;
-    Ok(ProcessResult::StoredAPIKeys)
 }
 
 pub fn get_home_directory() -> Result<String, ProcessError> {

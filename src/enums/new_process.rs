@@ -1,15 +1,14 @@
-use crate::types::client::Client;
+use crate::types::Client;
 use crate::ui::window::Window;
 use std::path::PathBuf;
 
-use crate::enums::process::current::CurrentProcess;
+use crate::enums::CurrentProcess;
 use crate::utils;
 
-use super::error::ProcessError;
-use super::result::ProcessResult;
+use super::ProcessError;
+use super::ProcessResult;
 
 pub enum NewProcess {
-    StoreAPIKeysInFile,
     ConnectToAllSavedClients,
     GetUploadedFiles,
     SendLoginCode,
@@ -22,15 +21,6 @@ pub enum NewProcess {
 impl NewProcess {
     pub fn start(self, window: &mut Window) {
         match self {
-            NewProcess::StoreAPIKeysInFile => {
-                utils::send_result(
-                    window.sender.clone(),
-                    utils::store_api(
-                        window.api_tab.api_id.clone(),
-                        window.api_tab.api_hash.clone(),
-                    ),
-                );
-            }
             NewProcess::ConnectToAllSavedClients => {
                 window.current_process = CurrentProcess::ConnectingToAllSavedClients;
                 let sender = window.sender.clone();

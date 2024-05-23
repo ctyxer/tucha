@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::error::ProcessError;
+use super::ProcessError;
 
 pub enum CurrentProcess{
     Idle, 
