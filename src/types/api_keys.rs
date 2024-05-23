@@ -6,8 +6,8 @@ pub struct APIKeys {
 impl APIKeys {
     pub fn new() -> Self {
         Self {
-            api_id: 12345678,
-            api_hash: "qwertyuiopasdfghjklzxcvbnm123456".to_string(),
+            api_id: 12345678, // insert there your api_id from https://my.telegram.org/apps
+            api_hash: "qwerty".to_string() // insert there your api_hash from https://my.telegram.org/apps
         }
     }
 }
