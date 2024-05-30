@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
-use eframe::egui::{self, Context, Grid, Label, Layout};
+use eframe::egui::{self, Context, Grid, Label, Layout, TextEdit};
 
 use crate::{enums::NewProcess, types::Dir, ui::window::Window};
 
@@ -8,6 +8,8 @@ use crate::{enums::NewProcess, types::Dir, ui::window::Window};
 pub struct Cloud {
     pub clients_roots: BTreeMap<String, Dir>,
     pub current_path: PathBuf,
+    is_creating_folder: bool,
+    new_dir_name: String,
 }
 
 impl Cloud {
@@ -15,6 +17,8 @@ impl Cloud {
         Self {
             clients_roots: BTreeMap::new(),
             current_path: PathBuf::from("/"),
+            is_creating_folder: false,
+            new_dir_name: String::new(),
         }
     }
 
@@ -34,10 +38,38 @@ impl Cloud {
                 }
             });
 
-            ui.add(Label::new(
-                &window.cloud_tab.current_path.display().to_string(),
-            ))
+            ui.add(Label::new(format!(
+                "Current path: {}",
+                &window.cloud_tab.current_path.display().to_string()
+            )))
             .highlight();
+
+            if ui.button("Create directory").clicked() {
+                window.cloud_tab.is_creating_folder = true;
+            }
+            if window.cloud_tab.is_creating_folder {
+                ui.horizontal(|ui| {
+                    ui.label("Directory name: ");
+
+                    ui.with_layout(Layout::right_to_left(egui::Align::Min), |ui| {
+                        if ui.button("Cancel").clicked() {
+                            window.cloud_tab.is_creating_folder = false;
+                        }
+                        if ui.button("Create").clicked() {
+                            window
+                                .cloud_tab
+                                .current_path
+                                .push(window.cloud_tab.new_dir_name.clone());
+                            window.cloud_tab.new_dir_name.clear();
+                        }
+                        ui.add(
+                            TextEdit::singleline(&mut window.cloud_tab.new_dir_name)
+                                .min_size(ui.available_size()),
+                        );
+                    });
+                });
+            }
+
             ui.separator();
 
             if let Some(root) = window
