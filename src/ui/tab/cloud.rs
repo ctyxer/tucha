@@ -1,18 +1,20 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, path::PathBuf};
 
-use eframe::egui::{self, Context, Grid, Layout};
+use eframe::egui::{self, Context, Grid, Label, Layout};
 
-use crate::{enums::NewProcess, types::File, ui::window::Window};
+use crate::{enums::NewProcess, types::Dir, ui::window::Window};
 
 #[derive(Clone)]
 pub struct Cloud {
-    pub clients_files: BTreeMap<String, Vec<File>>,
+    pub clients_roots: BTreeMap<String, Dir>,
+    pub current_path: PathBuf,
 }
 
 impl Cloud {
     pub fn new() -> Self {
         Self {
-            clients_files: BTreeMap::new(),
+            clients_roots: BTreeMap::new(),
+            current_path: PathBuf::from("/"),
         }
     }
 
@@ -32,36 +34,77 @@ impl Cloud {
                 }
             });
 
-            if let Some(files) = window
+            ui.add(Label::new(
+                &window.cloud_tab.current_path.display().to_string(),
+            ))
+            .highlight();
+            ui.separator();
+
+            if let Some(root) = window
                 .cloud_tab
-                .clients_files
+                .clients_roots
                 .clone()
-                .get(&window.current_client)
-                .clone()
+                .get_mut(&window.current_client)
             {
                 Grid::new("Cloud")
                     .num_columns(3)
                     .striped(true)
                     .max_col_width(ui.available_width())
                     .show(ui, |ui| {
-                        for file in files {
-                            ui.horizontal(|ui| {
-                                ui.label(format!("{}{}", &file.metadata.path, &file.name));
-                                ui.with_layout(
-                                    Layout::right_to_left(eframe::egui::Align::Max),
-                                    |ui| {
-                                        if ui.button("Download").clicked() {
-                                            NewProcess::DownloadFiles(vec![file.message_id])
+                        if let Some(relative_dir) =
+                            root.find_directory_by_relative_path(&window.cloud_tab.current_path)
+                        {
+                            if window.cloud_tab.current_path != PathBuf::from("/") {
+                                if ui.add(Label::new("..")).clicked() {
+                                    window.cloud_tab.current_path.pop();
+                                }
+                                ui.end_row();
+                            }
+                            for dir in relative_dir.get_children_dirs().values() {
+                                ui.horizontal(|ui| {
+                                    if ui.add(Label::new(&dir.name)).clicked() {
+                                        window.cloud_tab.current_path.push(&dir.name);
+                                    }
+                                    ui.with_layout(
+                                        Layout::right_to_left(eframe::egui::Align::Max),
+                                        |ui| {
+                                            if ui.button("Download").clicked() {
+                                                NewProcess::DownloadFiles(
+                                                    dir.get_files_messages_ids(),
+                                                )
                                                 .start(window);
-                                        }
-                                        if ui.button("Delete").clicked() {
-                                            NewProcess::DeleteFiles(vec![file.message_id])
+                                            }
+                                            if ui.button("Delete").clicked() {
+                                                NewProcess::DeleteFiles(
+                                                    dir.get_files_messages_ids(),
+                                                )
                                                 .start(window);
-                                        }
-                                    },
-                                );
-                            });
-                            ui.end_row();
+                                            }
+                                        },
+                                    );
+                                });
+                                ui.end_row();
+                            }
+
+                            for file in &relative_dir.files {
+                                ui.horizontal(|ui| {
+                                    ui.label(&file.path.display().to_string());
+                                    ui.with_layout(
+                                        Layout::right_to_left(eframe::egui::Align::Max),
+                                        |ui| {
+                                            if ui.button("Download").clicked() {
+                                                NewProcess::DownloadFiles(vec![file.message_id])
+                                                    .start(window);
+                                            }
+                                            if ui.button("Delete").clicked() {
+                                                NewProcess::DeleteFiles(vec![file.message_id])
+                                                    .start(window);
+                                            }
+                                        },
+                                    );
+                                });
+                                ui.end_row();
+                            }
                         }
                     });
             }

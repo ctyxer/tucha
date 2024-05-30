@@ -210,9 +210,14 @@ impl Client {
     pub async fn upload_files(
         self: Self,
         transferred_files: Vec<PathBuf>,
+        path: PathBuf,
     ) -> Result<ProcessResult, ProcessError> {
         for file in transferred_files {
-            let file_metadata = FileMetadata::new(String::from(""));
+            let file_metadata = FileMetadata::new(
+                path.join(file.file_name().ok_or(ProcessError::CannotGetFileName)?)
+                    .display()
+                    .to_string(),
+            );
 
             let message = InputMessage::text(
                 serde_json::to_string(&file_metadata)
@@ -247,18 +252,8 @@ impl Client {
             if let Ok(file_metadata) = serde_json::from_str::<FileMetadata>(message.text()) {
                 if let Some(media) = message.media() {
                     match media {
-                        Media::Document(document) => {
-                            let file =
-                                File::new(file_metadata, message.id(), document.name().to_string());
-
-                            files.push(file);
-                        }
-                        Media::Sticker(sticker) => {
-                            let file = File::new(
-                                file_metadata,
-                                message.id(),
-                                sticker.document.name().to_string(),
-                            );
+                        Media::Document(_) | Media::Sticker(_) => {
+                            let file = File::new(file_metadata, message.id());
 
                             files.push(file);
                         }

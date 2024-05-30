@@ -1,9 +1,13 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    path::Component,
+    sync::Arc,
+};
 
 use grammers_client::types::LoginToken;
 
 use crate::{
-    types::{Client, File},
+    types::{Client, Dir, File},
     ui::{tab::Tab, window::Window},
 };
 
@@ -56,8 +60,29 @@ impl ProcessResult {
                 }
                 ProcessResult::UploadedFilesReceived(client_name, files) => {
                     window.current_process = CurrentProcess::Idle;
+                    let mut root = Dir::root();
 
-                    window.cloud_tab.clients_files.insert(client_name, files);
+                    for file in files {
+                        if let Some(parent) = file.path.parent() {
+                            let components = parent
+                                .components()
+                                .filter(|component| match component {
+                                    Component::Normal(_) => true,
+                                    _ => false,
+                                })
+                                .collect::<Vec<_>>()
+                                .into_iter();
+
+                            if components.clone().count() > 0 {
+                                let new_dir = root.add_new_path(components);
+                                new_dir.files.push(file);
+                            } else {
+                                root.files.push(file);
+                            }
+                        }
+                    }
+
+                    window.cloud_tab.clients_roots.insert(client_name, root);
                 }
                 ProcessResult::FilesDownloaded => {
                     window.current_process = CurrentProcess::Idle;

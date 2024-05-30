@@ -83,11 +83,12 @@ impl NewProcess {
                         return;
                     }
                 };
+                let path = window.cloud_tab.current_path.clone();
 
                 tokio::spawn(async move {
                     utils::send_result(
                         sender,
-                        client.upload_files(transferred_files.clone()).await,
+                        client.upload_files(transferred_files.clone(), path).await,
                     );
                 });
             }

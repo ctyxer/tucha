@@ -59,7 +59,7 @@ impl Window {
                             });
                         if ui.button("Restart clients").clicked() {
                             self.clients.clear();
-                            self.cloud_tab.clients_files.clear();
+                            self.cloud_tab.clients_roots.clear();
                             NewProcess::ConnectToAllSavedClients.start(self);
                         }
                     }

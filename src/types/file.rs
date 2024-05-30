@@ -1,18 +1,18 @@
+use std::path::PathBuf;
+
 use super::FileMetadata;
 
 #[derive(Debug, Clone)]
 pub struct File {
-    pub metadata: FileMetadata,
-    pub message_id: i32,
-    pub name: String
+    pub path: PathBuf,
+    pub message_id: i32
 }
 
 impl File {
-    pub fn new(metadata: FileMetadata, message_id: i32, name: String) -> Self {
+    pub fn new(metadata: FileMetadata, message_id: i32) -> Self {
         Self {
-            metadata, 
+            path: metadata.path.into(), 
             message_id,
-            name
         }
     }
 }
