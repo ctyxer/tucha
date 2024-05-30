@@ -83,15 +83,16 @@ impl Cloud {
                     .striped(true)
                     .max_col_width(ui.available_width())
                     .show(ui, |ui| {
+                        if window.cloud_tab.current_path != PathBuf::from("/") {
+                            if ui.add(Label::new("..")).clicked() {
+                                window.cloud_tab.current_path.pop();
+                            }
+                            ui.end_row();
+                        }
+
                         if let Some(relative_dir) =
                             root.find_directory_by_relative_path(&window.cloud_tab.current_path)
                         {
-                            if window.cloud_tab.current_path != PathBuf::from("/") {
-                                if ui.add(Label::new("..")).clicked() {
-                                    window.cloud_tab.current_path.pop();
-                                }
-                                ui.end_row();
-                            }
                             for dir in relative_dir.get_children_dirs().values() {
                                 ui.horizontal(|ui| {
                                     if ui.add(Label::new(&dir.name)).clicked() {
