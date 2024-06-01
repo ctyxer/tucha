@@ -1,8 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    path::Component,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
 use grammers_client::types::LoginToken;
 
@@ -63,24 +59,21 @@ impl ProcessResult {
                     let mut root = Dir::root();
 
                     for file in files {
-                        if let Some(parent) = file.path.parent() {
-                            let components = parent
-                                .components()
-                                .filter(|component| match component {
-                                    Component::Normal(_) => true,
-                                    _ => false,
-                                })
-                                .collect::<Vec<_>>()
-                                .into_iter();
+                        dbg!(&file);
+                        let parent = file.path.parent();
+                        dbg!(&parent);
+                        let components = parent.components().into_iter();
+                        dbg!(&components);
 
-                            if components.clone().count() > 0 {
-                                let new_dir = root.add_new_path(components);
-                                new_dir.files.push(file);
-                            } else {
-                                root.files.push(file);
-                            }
+                        if components.clone().count() > 0 {
+                            let new_dir = root.add_new_path(components);
+                            new_dir.files.push(file);
+                        } else {
+                            root.files.push(file);
                         }
                     }
+
+                    dbg!(&root);
 
                     window.cloud_tab.clients_roots.insert(client_name, root);
                 }

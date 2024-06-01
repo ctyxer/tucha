@@ -30,15 +30,13 @@ impl Dir {
         }
     }
 
-    pub fn add_new_path(&mut self, mut components: IntoIter<Component>) -> &mut Self {
+    pub fn add_new_path(&mut self, mut components: IntoIter<String>) -> &mut Self {
         let mut rel_dir = self;
-        while let Some(Component::Normal(os_name)) = components.next() {
-            if let Some(name) = os_name.to_str() {
-                rel_dir = rel_dir
-                    .children_dirs
-                    .entry(name.to_string())
-                    .or_insert_with(|| Dir::new(name));
-            }
+        while let Some(name) = components.next() {
+            rel_dir = rel_dir
+                .children_dirs
+                .entry(name.to_string())
+                .or_insert_with(|| Dir::new(&name));
         }
         rel_dir
     }

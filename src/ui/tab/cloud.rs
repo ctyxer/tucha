@@ -121,7 +121,9 @@ impl Cloud {
 
                             for file in &relative_dir.files {
                                 ui.horizontal(|ui| {
-                                    ui.label(&file.path.display().to_string());
+                                    ui.label(file.path.name().unwrap_or_else(|| {
+                                        "Cannot display this name"
+                                    }));
                                     ui.with_layout(
                                         Layout::right_to_left(eframe::egui::Align::Max),
                                         |ui| {
