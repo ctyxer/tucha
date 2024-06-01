@@ -1,10 +1,9 @@
 use std::{
     collections::BTreeMap,
-    path::{Component, Path},
     vec::IntoIter,
 };
 
-use super::File;
+use super::{File, Path};
 
 #[derive(Debug, Clone)]
 pub struct Dir {
@@ -46,16 +45,11 @@ impl Dir {
     }
 
     pub fn find_directory_by_relative_path(&mut self, path: &Path) -> Option<&Self> {
-        let mut components = path.components().into_iter().filter(|component| {
-            if let Component::Normal(_) = component {
-                return true;
-            }
-            false
-        });
+        let mut components = path.components().into_iter();
 
         let mut relative_dir = self;
-        while let Some(Component::Normal(os_path)) = components.next() {
-            if let Some(next_dir) = relative_dir.find_mut_child(os_path.to_str()?) {
+        while let Some(name) = components.next() {
+            if let Some(next_dir) = relative_dir.find_mut_child(&name) {
                 relative_dir = next_dir;
                 continue;
             }

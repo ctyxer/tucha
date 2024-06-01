@@ -13,7 +13,7 @@ use crate::{
     utils::{self},
 };
 
-use super::{APIKeys, File, FileMetadata};
+use super::{APIKeys, File, FileMetadata, Path};
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -210,13 +210,17 @@ impl Client {
     pub async fn upload_files(
         self: Self,
         transferred_files: Vec<PathBuf>,
-        path: PathBuf,
+        path: Path,
     ) -> Result<ProcessResult, ProcessError> {
         for file in transferred_files {
             let file_metadata = FileMetadata::new(
-                path.join(file.file_name().ok_or(ProcessError::CannotGetFileName)?)
-                    .display()
-                    .to_string(),
+                path.join(
+                    file.file_name()
+                        .ok_or(ProcessError::CannotGetFileName)?
+                        .to_str()
+                        .ok_or(ProcessError::CannotGetFileName)?,
+                )
+                .path(),
             );
 
             let message = InputMessage::text(

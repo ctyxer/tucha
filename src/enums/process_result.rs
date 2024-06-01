@@ -59,11 +59,8 @@ impl ProcessResult {
                     let mut root = Dir::root();
 
                     for file in files {
-                        dbg!(&file);
                         let parent = file.path.parent();
-                        dbg!(&parent);
                         let components = parent.components().into_iter();
-                        dbg!(&components);
 
                         if components.clone().count() > 0 {
                             let new_dir = root.add_new_path(components);
@@ -72,8 +69,6 @@ impl ProcessResult {
                             root.files.push(file);
                         }
                     }
-
-                    dbg!(&root);
 
                     window.cloud_tab.clients_roots.insert(client_name, root);
                 }

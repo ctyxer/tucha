@@ -1,13 +1,13 @@
-use std::{collections::BTreeMap, path::PathBuf};
+use std::collections::BTreeMap;
 
 use eframe::egui::{self, Context, Grid, Label, Layout, TextEdit};
 
-use crate::{enums::NewProcess, types::Dir, ui::window::Window};
+use crate::{enums::NewProcess, types::{Dir, Path}, ui::window::Window};
 
 #[derive(Clone)]
 pub struct Cloud {
     pub clients_roots: BTreeMap<String, Dir>,
-    pub current_path: PathBuf,
+    pub current_path: Path,
     is_creating_folder: bool,
     new_dir_name: String,
 }
@@ -16,7 +16,7 @@ impl Cloud {
     pub fn new() -> Self {
         Self {
             clients_roots: BTreeMap::new(),
-            current_path: PathBuf::from("/"),
+            current_path: Path::default(),
             is_creating_folder: false,
             new_dir_name: String::new(),
         }
@@ -40,7 +40,7 @@ impl Cloud {
 
             ui.add(Label::new(format!(
                 "Current path: {}",
-                &window.cloud_tab.current_path.display().to_string()
+                &window.cloud_tab.current_path.path()
             )))
             .highlight();
 
@@ -59,7 +59,7 @@ impl Cloud {
                             window
                                 .cloud_tab
                                 .current_path
-                                .push(window.cloud_tab.new_dir_name.clone());
+                                .push(&window.cloud_tab.new_dir_name.clone());
                             window.cloud_tab.new_dir_name.clear();
                         }
                         ui.add(
@@ -83,7 +83,7 @@ impl Cloud {
                     .striped(true)
                     .max_col_width(ui.available_width())
                     .show(ui, |ui| {
-                        if window.cloud_tab.current_path != PathBuf::from("/") {
+                        if window.cloud_tab.current_path != Path::new("/") {
                             if ui.add(Label::new("..")).clicked() {
                                 window.cloud_tab.current_path.pop();
                             }
